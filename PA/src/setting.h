@@ -4,6 +4,4 @@
 #define MAX_SYMBOL 20
 #define RENAME_SYMBOL "_new"
 
-#define BACK_STEP 5
-
 #endif

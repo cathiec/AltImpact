@@ -36,7 +36,7 @@ public:
             std::vector<z3::expr> temp2;
             for(int j = 0; j < X.size(); j++)
             {
-                std::string var = X[j] + itoa(i + 1);
+                std::string var = X[j] + std::to_string(i + 1);
                 for(int k = 0; k < m.num_consts(); k++)
                 {
                     if(m.get_const_decl(k).name().str() == var)

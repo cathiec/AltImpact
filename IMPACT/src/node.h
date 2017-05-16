@@ -20,8 +20,6 @@ public:
     int _symbol;
     z3::expr _theta;
 
-    std::vector<z3::expr> _R;   // Booleans (states)
-
     std::vector<int> _down_symbol;
     std::vector<z3::expr> _down_theta;
     std::vector<node *> _down;
@@ -37,7 +35,7 @@ public:
 
     node(const node & n)
         :_num(n._num), _step(n._step), _lambda(n._lambda), _father(n._father), _symbol(n._symbol),
-         _theta(n._theta), _R(n._R), _down_symbol(n._down_symbol), _down_theta(n._down_theta),
+         _theta(n._theta), _down_symbol(n._down_symbol), _down_theta(n._down_theta),
          _down(n._down), _covering(n._covering), _covered(n._covered)
     {}
 
@@ -52,7 +50,6 @@ public:
         _father = n._father;
         _symbol = n._symbol;
         _theta = n._theta;
-        _R = n._R;
         _down_symbol = n._down_symbol;
         _down_theta = n._down_theta;
         _down = n._down;

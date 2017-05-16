@@ -2,6 +2,8 @@
 #define alternating_data_automaton_h
 
 #include "word.h"
+#include "timer.h"
+
 #include <fstream>
 #include <map>
 #include <tuple>
@@ -52,17 +54,15 @@ public:
 
     void read_initial_state(std::ifstream & cur, std::string end, bool print = false)
     {
+        getline(cur, _i, '\n');
+        getline(cur, _i, '\n');
+        if(print)
+            std::cout << "% cath::declare : (declare-initial-state " << _i << ")" << std::endl;
         std::string temp;
         while(cur >> temp)
         {
             if(temp == end)
                 break;
-            else
-            {
-                _i = temp;
-                if(print)
-                    std::cout << "% cath::declare : (declare-initial-state " << temp << ")" << std::endl;
-            }
         }
     }
 
@@ -132,7 +132,8 @@ public:
                 cur >> temp;
                 std::string left = temp;
                 getline(cur, temp, '\n');
-                getline(cur, temp, '\n');
+                getline(cur, temp, '#');
+                temp.erase(temp.length() - 1);
                 if(print)
                 {
                     std::cout << "% cath::declare : (declare-transition " << _g[pos]._symbol << "(" << left << ")";
@@ -258,85 +259,6 @@ public:
             return false;
     }
 
-    bool is_empty_concrete_mode(bool print = false) const
-    {
-        z3::expr init = parse(_i);
-        std::vector<std::tuple<int, z3::expr> > NEXT;
-        NEXT.push_back(std::make_tuple(0, init));
-        std::vector<std::tuple<int, z3::expr> > PROCESSED;
-        while(NEXT.size() > 0)
-        {
-            int CURRENT_STEP = std::get<0>(NEXT[NEXT.size() - 1]);
-            z3::expr CURRENT = std::get<1>(NEXT[NEXT.size() - 1]);
-            if(print)
-                std::cout << "<" << CURRENT_STEP << "," << CURRENT << ">" << std::endl;
-            if(is_sat(CURRENT, true))
-                return false;
-            PROCESSED.push_back(NEXT[NEXT.size() - 1]);
-            NEXT.pop_back();
-            for(int i = 0; i < _g.size(); i++)
-            {
-                z3::expr POST = concrete_post(CURRENT, _g[i], CURRENT_STEP);
-                if(print)
-                    std::cout << "POST(" << _g[i]._symbol << ") = " << "<" << CURRENT_STEP + 1
-                                  << "," << POST << ">" << std::endl;
-                if(is_always_false(POST))
-                    continue;
-                bool already = false;
-                for(int j = 0; j < NEXT.size(); j++)
-                {
-                    z3::expr target = set_step(std::get<1>(NEXT[j]), std::get<0>(NEXT[j]), CURRENT_STEP + 1);
-                    if(always_implies(POST, target))
-                    {
-                        already = true;
-                        break;
-                    }
-                }
-                if(already == false)
-                {
-                    for(int j = 0; j < PROCESSED.size(); j++)
-                    {
-                        z3::expr target = set_step(std::get<1>(PROCESSED[j]), std::get<0>(PROCESSED[j]), CURRENT_STEP + 1);
-                        if(always_implies(POST, target))
-                        {
-                            already = true;
-                            break;
-                        }
-                    }
-                }
-                if(already == false)
-                {
-                    std::vector<std::tuple<int, z3::expr> >::iterator it = NEXT.begin();
-                    while(NEXT.size() != (it - NEXT.begin()))
-                    {
-                        z3::expr target = set_step(std::get<1>(*it), std::get<0>(*it), CURRENT_STEP + 1);
-                        if(always_implies(target, POST))
-                        {
-                            NEXT.erase(it);
-                            continue;
-                        }
-                        it++;
-                    }
-                    it = PROCESSED.begin();
-                    while(PROCESSED.size() != (it - PROCESSED.begin()))
-                    {
-                        z3::expr target = set_step(std::get<1>(*it), std::get<0>(*it), CURRENT_STEP + 1);
-                        if(always_implies(target, POST))
-                        {
-                            PROCESSED.erase(it);
-                            continue;
-                        }
-                        it++;
-                    }
-                    NEXT.push_back(std::make_tuple(CURRENT_STEP + 1, POST));
-                }
-            }
-            if(print)
-                std::cout << std::endl;
-        }
-        return true;
-    }
-
     z3::expr abstract_post(const z3::expr & before, const transition_group & tg, int step,
                            const std::vector<z3::expr> & interpolant) const
     {
@@ -403,7 +325,7 @@ public:
         return result.substitute(from, to);
     }
 
-    bool is_empty_abstract_mode(bool print = false) const
+    bool is_empty(bool print = false, int k_step = 1) const
     {
         z3::expr init = parse(_i);
         if(is_sat(init))
@@ -555,7 +477,7 @@ public:
                                         //std::cout << "ADD INTERPOLANT: " << with_stamp << std::endl;
                                 }
                             }
-                            if(back_step >= BACK_STEP || back_track == &history)
+                            if(back_step >= k_step || back_track == &history)
                             {
                                 //std::cout << back_step << std::endl;
                                 //std::cout << BACK_STEP << std::endl;
@@ -616,14 +538,6 @@ public:
                 std::cout << std::endl;
         }
         return true;
-    }
-
-    bool is_empty(check_mode m = ABSTRACT, bool print = false) const
-    {
-        if(m == ABSTRACT)
-            return is_empty_abstract_mode(print);
-        else if(m == CONCRETE)
-            return is_empty_concrete_mode(print);
     }
 
     ADA complement() const
