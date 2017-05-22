@@ -2,7 +2,7 @@
 
 ## What is *** ?
 
-Here are implementations of emptiness check of alternating data automata (ADA) with two different (semi) algorithms, IMPAC and Lazy Predicate Abstraction.
+Here are implementations of emptiness check of alternating data automata (ADA) with two different (semi) algorithms, IMPACT and Lazy Predicate Abstraction.
 
 ## How to use *** ?
 
